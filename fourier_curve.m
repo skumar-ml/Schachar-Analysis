@@ -21,7 +21,7 @@ function [x_param, y_param] = fourier_curve(age)
 
     % Parameterize the curve (from polar to cartesian)
     % THEY ARE SWAPPED TO SWITCH ANTERIOR/POSTERIOR INTO FUNCTION (Flips by 90 degrees)
-    y_param = rho * cos(t); % x = r*cos(theta)
+    y_param = -rho * cos(t); % x = r*cos(theta)
     x_param = rho * sin(t); % y = r*sin(theta)
     
     

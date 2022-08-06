@@ -12,7 +12,7 @@ data_path = strcat("data/", data_file);
 % First column = x, Second column = y
 
 M = readmatrix(data_path, 'Sheet', 'Centered and Aligned', 'Range', 'A:B');
-figure; scatter(M(:,1), M(:,2)); title("Original plot of data"); xlim([-5,5]); ylim([-5,5]); % Plot to confirm
+figure; scatter(M(:,2), M(:,1)); title("Original plot of data"); xlim([-5,5]); ylim([-5,5]); % Plot to confirm
 
 
 % Bottom in original data, is indented from suture, so I
@@ -35,15 +35,21 @@ figure; scatter(X_data, Y_data, 6); hold on;
 
 %% Fourier 
 
-% Find parameterized x, y of Fourier Curve
+%Find parameterized x, y of Fourier Curve
 [x_fourier, y_fourier] = fourier_curve(age);
 
 % Obtain x,y coords for anterior
 fourier_bounds = [pi/2, 3*pi/2];
-[X_fourierAnt, Y_fourierAnt] = fplot(x_fourier, y_fourier, fourier_bounds);
-plot(X_fourierAnt, -Y_fourierAnt, 'LineWidth', 2);
+fp = fplot(x_fourier, y_fourier, fourier_bounds, 'LineWidth', 2); Y_fourierAnt = fp.YData; X_fourierAnt = fp.XData;
+%plot(X_fourierAnt, -Y_fourierAnt, 'LineWidth', 2);
 
 a_ant_fourier = max(X_fourierAnt);
+
+% fourier_bounds = [-pi/2, pi/2]
+% 
+% [x_fourier, y_fourier] = fourier_fit(M(:,2), M(:,1));
+% [X_fourier, Y_fourier] = fplot(x_fourier, y_fourier, fourier_bounds);
+% plot(X_fourier, Y_fourier)
 
 %% Chien - fit to raw
 syms t
@@ -57,8 +63,8 @@ x_chienAnt = a_ant*sin(t);
 y_chienAnt = (b0_ant + b1_ant*t^2 + b3_ant*t^4)*cos(t);
 
 chien_bounds = [-pi/2, pi/2];
-[X_chienAnt, Y_chienAnt] = fplot(x_chienAnt, y_chienAnt, chien_bounds);
-plot(X_chienAnt, Y_chienAnt, 'LineWidth', 2);
+fp = fplot(x_chienAnt, y_chienAnt, chien_bounds, 'LineWidth', 2); X_chienAnt = fp.XData; Y_chienAnt = fp.YData;
+%plot(X_chienAnt, Y_chienAnt, 'LineWidth', 2);
 
 
 %% Forbes
@@ -72,9 +78,9 @@ syms rho;
 forbes_reformat = -1*forbes_eq + eval(subs(forbes_eq, rho, a_ant));
 forbes_eq = forbes_reformat;
 
-[X_forbes, Y_forbes] = fplot(rho, forbes_eq, [min(X_data), max(X_data)]); 
+fp = fplot(rho, forbes_eq, [min(X_data), max(X_data)], 'LineWidth', 2); X_forbes = fp.XData; Y_forbes = fp.YData;
 %Y_forbes = -Y_forbes + max(Y_forbes); % Reconvert to standard format (matching other graphs)
-plot(X_forbes, Y_forbes, 'LineWidth', 2);
+%plot(X_forbes, Y_forbes, 'LineWidth', 2);
 
 forbes_eq = subs(forbes_eq, rho, t);
 % Note -- the t in the forbes equation is cartesian! Stands for x (not
@@ -84,13 +90,13 @@ x_elipAnt = a_ant*cos(t); % in mm
 y_elipAnt = b0_ant*sin(t); % in mm
 
 elip_bounds = [0 pi];
-[X_elipAnt, Y_elipAnt] = fplot(x_elipAnt, y_elipAnt, elip_bounds);
-plot(X_elipAnt, Y_elipAnt, 'LineWidth', 2);
+fp = fplot(x_elipAnt, y_elipAnt, elip_bounds, 'LineWidth', 2); X_elipAnt = fp.XData; Y_elipAnt = fp.YData;
+%plot(X_elipAnt, Y_elipAnt, 'LineWidth', 2);
 
 legend("Raw", "Fourier", "Chien", "Forbes", "Ellipse")
 
 %% Metrics
-zone = 0.5; % optical zone [-zone, +zone]
+zone = 3; % optical zone [-zone, +zone]
 offset_chien = abs(chien_bounds(1)) - asin(zone/a_ant); % polar - difference to come in from edges
 offset_elip = -1* (abs(elip_bounds(1)) - acos(zone/a_ant));
 offset_fourier = abs(fourier_bounds(1)) - asin(zone/a_ant_fourier); 
@@ -124,18 +130,21 @@ smth_forbes = eval(vpaintegral(diff(k_forbes, t, 1) ^ 2, -zone, zone));
 
 % Mean/Variance of RoC - variance found numerically
 meanROC_chienAnt = abs(1/((chien_bounds(2)-offset_chien) - (chien_bounds(1)+offset_chien)) * eval(vpaintegral(1/k_chienAnt, chien_bounds(1)+offset_chien, chien_bounds(2)-offset_chien)));
-[unused, yROC_chienAnt] = fplot(1/k_chienAnt, [chien_bounds(1)+offset_chien, chien_bounds(2)-offset_chien], 'MeshDensity', 200);
+fp = fplot(1/k_chienAnt, [chien_bounds(1)+offset_chien, chien_bounds(2)-offset_chien], 'MeshDensity', 200);
+yROC_chienAnt = fp.YData;
 varROC_chienAnt = var(yROC_chienAnt);
 valROC_chienAnt = abs(eval(subs(1/k_chienAnt, t, chien_bounds(1)+offset_chien)));
 
 
 meanROC_elipAnt = abs(1/((elip_bounds(2)-offset_elip) - (elip_bounds(1)+offset_elip)) * eval(vpaintegral(1/k_elipAnt, elip_bounds(1)+offset_elip, elip_bounds(2)-offset_elip)));
-[unused, yROC_elipAnt] = fplot(1/k_elipAnt, [elip_bounds(1)+offset_elip, elip_bounds(2)-offset_elip], 'MeshDensity', 200);
+fp = fplot(1/k_elipAnt, [elip_bounds(1)+offset_elip, elip_bounds(2)-offset_elip], 'MeshDensity', 200);
+yROC_elipAnt = fp.YData;
 varROC_elipAnt = var(yROC_elipAnt);
 valROC_elipAnt = abs(eval(subs(1/k_elipAnt, t, elip_bounds(1)+offset_elip)));
 
 meanROC_fourierAnt = abs(1/((fourier_bounds(2)-offset_fourier) - (fourier_bounds(1)+offset_fourier)) * eval(vpaintegral(1/k_fourierAnt, fourier_bounds(1)+offset_fourier, fourier_bounds(2)-offset_fourier)));
-[unused, yROC_fourierAnt] = fplot(1/k_fourierAnt, [fourier_bounds(1)+offset_fourier, fourier_bounds(2)-offset_fourier], 'MeshDensity', 200);
+fp = fplot(1/k_fourierAnt, [fourier_bounds(1)+offset_fourier, fourier_bounds(2)-offset_fourier], 'MeshDensity', 200);
+yROC_fourierAnt = fp.YData;
 varROC_fourierAnt = var(yROC_fourierAnt);
 valROC_fourierAnt = abs(eval(subs(1/k_fourierAnt, t, fourier_bounds(1)+offset_fourier)));
 
