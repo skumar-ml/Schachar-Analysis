@@ -51,7 +51,6 @@ data_bottom = [data_top(:,1), -1*data_top(:,2)];
 
 fourier_data = cat(1, data_top, data_bottom);
 
-
 [x_fourier, y_fourier] = fourier_fit(fourier_data(:,1), fourier_data(:,2));
 temp = x_fourier; x_fourier = y_fourier; y_fourier = -temp; % switching equations to properly orient anterior surface
 fp = fplot(x_fourier, y_fourier, fourier_bounds); X_fourierAnt = fp.XData; Y_fourierAnt = fp.YData;

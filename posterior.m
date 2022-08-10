@@ -35,7 +35,15 @@ figure; scatter(X_data, Y_data, 6); hold on;
 %% Fourier 
 
 % Find parameterized x, y of Fourier Curve
-[x_fourier, y_fourier] = fourier_curve(age);
+% [x_fourier, y_fourier] = fourier_curve(age);
+
+data_top = M(M(:,2) > 0, :);
+data_bottom = [data_top(:,1), -1*data_top(:,2)];
+
+fourier_data = cat(1, data_top, data_bottom);
+[x_fourier, y_fourier] = fourier_fit(fourier_data(:,1), fourier_data(:,2));
+
+temp = x_fourier; x_fourier = y_fourier; y_fourier = temp;
 
 % Obtain x,y coords for posterior
 fourier_bounds = [-pi/2, pi/2];
@@ -107,19 +115,19 @@ legend("Raw", "Fourier", "Chien", "Forbes", "Ellipse")
 zone = 0.5; % optical zone [-zone, +zone]
 offset_chien = abs(chien_bounds(1)) - asin(zone/a); % polar - difference to come in from edges
 offset_elip = -1* (abs(elip_bounds(1)) - acos(zone/a));
-offset_fourier = abs(fourier_bounds(1)) - asin(zone/a_post_fourier); 
+offset_fourier = abs(fourier_bounds(1)) - asin(zone/a_post_fourier)
 
 % Find curvature
 k_chien = findCurvature(x_chien, y_chien, chien_bounds(1)+offset_chien, chien_bounds(2)-offset_chien);
 k_elip = findCurvature(x_elip, y_elip, elip_bounds(1)+offset_elip, elip_bounds(2)-offset_elip);
 k_fourier = findCurvature(x_fourier, y_fourier, fourier_bounds(1)+offset_fourier, fourier_bounds(2)-offset_fourier);
-k_forbes = findCurvature(t, forbes_eq, -zone, zone);
+k_forbes = findCurvature(t, forbes_eq, -zone, zone)
 
 % Plot curvature
 figure; hold on;
-fplot(t, abs(k_chien), chien_bounds);
-fplot(t-pi/2, abs(k_elip), elip_bounds);
-fplot(t-pi, abs(k_fourier), fourier_bounds);
+fplot(a_ant*sin(t), abs(k_chien), chien_bounds);
+fplot(a_ant*sin(t-pi/2), abs(k_elip), elip_bounds);
+fplot(a_post_fourier*sin(t), abs(k_fourier), fourier_bounds);
 fplot(t, abs(k_forbes));
 legend("Chien", "Ellipse", "Fourier", "Forbes"); title("Curvature")
 
@@ -127,40 +135,40 @@ legend("Chien", "Ellipse", "Fourier", "Forbes"); title("Curvature")
 smth_chien = eval(vpaintegral(diff(k_chien, t, 1) ^ 2, chien_bounds(1)+offset_chien, chien_bounds(2)-offset_chien));
 smth_elip = eval(vpaintegral(diff(k_elip, t, 1) ^ 2, elip_bounds(1)+offset_elip, elip_bounds(2)-offset_elip));
 smth_fourier = eval(vpaintegral(diff(k_fourier, t, 1) ^ 2, fourier_bounds(1)+offset_fourier, fourier_bounds(2)-offset_fourier));
-smth_forbes = eval(vpaintegral(diff(k_forbes, t, 1) ^ 2, -zone, zone));
+smth_forbes = eval(vpaintegral(diff(k_forbes, t, 1) ^ 2, -zone, zone))
 
 % Find bending energy
 [bendE_chien, firstD_chien, expr_chien] = findBendingEnergy(x_chien, y_chien, chien_bounds(1)+offset_chien, chien_bounds(2)-offset_chien);
 [bendE_elip, firstD_elipAnt, expr_elip] = findBendingEnergy(x_elip, y_elip, elip_bounds(1)+offset_elip, elip_bounds(2)-offset_elip);
 [bendE_fourier, firstD_fourierAnt, expr_fourier] = findBendingEnergy(x_fourier, y_fourier, fourier_bounds(1)+offset_fourier, fourier_bounds(2)-offset_fourier);
-[bendE_forbes, firstD_forbes, expr_forbes] = findBendingEnergy(t, forbes_eq, -zone, zone);
+[bendE_forbes, firstD_forbes, expr_forbes] = findBendingEnergy(t, forbes_eq, -zone, zone)
 
 figure
 % Mean/Variance of RoC - variance found numerically
-meanROC_chien = abs(1/((chien_bounds(2)-offset_chien) - (chien_bounds(1)+offset_chien)) * eval(vpaintegral(1/k_chien, chien_bounds(1)+offset_chien, chien_bounds(2)-offset_chien)));
-fp = fplot(k_chien, [chien_bounds(1)+offset_chien, chien_bounds(2)-offset_chien], 'MeshDensity', 200);
+meanROC_chien = abs(1/((chien_bounds(2)-offset_chien) - (chien_bounds(1)+offset_chien)) * eval(vpaintegral(k_chien, chien_bounds(1)+offset_chien, chien_bounds(2)-offset_chien)));
+fp = fplot(abs(k_chien), [chien_bounds(1)+offset_chien, chien_bounds(2)-offset_chien], 'MeshDensity', 200);
 yROC_chien = fp.YData;
 varROC_chien = var(yROC_chien);
-valROC_chien = abs(eval(subs(k_chien, t, chien_bounds(1)+offset_chien)));
+valROC_chien = abs(eval(subs(k_chien, t, chien_bounds(1)+offset_chien)))
 
 
-meanROC_elip = abs(1/((elip_bounds(2)-offset_elip) - (elip_bounds(1)+offset_elip)) * eval(vpaintegral(1/k_elip, elip_bounds(1)+offset_elip, elip_bounds(2)-offset_elip)));
-fp = fplot(k_elip, [elip_bounds(1)+offset_elip, elip_bounds(2)-offset_elip], 'MeshDensity', 200);
+meanROC_elip = abs(1/((elip_bounds(2)-offset_elip) - (elip_bounds(1)+offset_elip)) * eval(vpaintegral(k_elip, elip_bounds(1)+offset_elip, elip_bounds(2)-offset_elip)));
+fp = fplot(abs(k_elip), [elip_bounds(1)+offset_elip, elip_bounds(2)-offset_elip], 'MeshDensity', 200);
 yROC_elip = fp.YData;
 varROC_elip = var(yROC_elip);
-valROC_elip = abs(eval(subs(k_elip, t, elip_bounds(1)+offset_elip)));
+valROC_elip = abs(eval(subs(k_elip, t, elip_bounds(1)+offset_elip)))
 
-meanROC_fourierAnt = abs(1/((fourier_bounds(2)-offset_fourier) - (fourier_bounds(1)+offset_fourier)) * eval(vpaintegral(1/k_fourier, fourier_bounds(1)+offset_fourier, fourier_bounds(2)-offset_fourier)));
-fp = fplot(k_fourier, [fourier_bounds(1)+offset_fourier, fourier_bounds(2)-offset_fourier], 'MeshDensity', 200);
-yROC_fourierAnt = fp.YData;
-varROC_fourierAnt = var(yROC_fourierAnt);
-valROC_fourierAnt = abs(eval(subs(k_fourier, t, fourier_bounds(1)+offset_fourier)));
-
-meanROC_forbesAnt = abs(1/(2*zone) * eval(vpaintegral(k_forbes, -zone, zone)));
-fp = fplot(k_forbes, [-zone, zone], 'MeshDensity', 200);
-yROC_forbesAnt = fp.YData;
-varROC_forbesAnt = var(yROC_forbesAnt);
-valROC_forbesAnt = abs(eval(subs(k_forbes, t, -zone)));
+meanROC_fourier = abs(1/((fourier_bounds(2)-offset_fourier) - (fourier_bounds(1)+offset_fourier)) * eval(vpaintegral(k_fourier, fourier_bounds(1)+offset_fourier, fourier_bounds(2)-offset_fourier)));
+fp = fplot(abs(k_fourier), [fourier_bounds(1)+offset_fourier, fourier_bounds(2)-offset_fourier], 'MeshDensity', 200);
+yROC_fourier = fp.YData;
+varROC_fourier = var(yROC_fourier);
+valROC_fourier = abs(eval(subs(k_fourier, t, fourier_bounds(1)+offset_fourier)))
+% 
+% meanROC_forbes = abs(1/(2*zone) * eval(vpaintegral(k_forbes, -zone, zone)));
+% fp = fplot(abs(k_forbes), [-zone, zone], 'MeshDensity', 200);
+% yROC_forbes = fp.YData;
+% varROC_forbes = var(yROC_forbes);
+% valROC_forbes = abs(eval(subs(k_forbes, t, -zone)))
 
 % Fit
 
