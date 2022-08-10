@@ -1,6 +1,6 @@
 clear; close all; clc;
 %% Input data
-data_file = "Human_20 yo RIEB15-1632_OD_data.xls";
+data_file = "Human_30 yo RIEB13-0161_OD_data.xls";
 age = 20;
 
 %% Read & Process Data
@@ -36,19 +36,27 @@ figure; scatter(X_data, Y_data, 6); hold on;
 %% Fourier 
 
 %Find parameterized x, y of Fourier Curve
-[x_fourier, y_fourier] = fourier_curve(age);
+% [x_fourier, y_fourier] = fourier_curve(age);
+% 
+% % Obtain x,y coords for anterior
+% fourier_bounds = [pi/2, 3*pi/2];
+% fp = fplot(x_fourier, y_fourier, fourier_bounds, 'LineWidth', 2); Y_fourierAnt = fp.YData; X_fourierAnt = fp.XData;
+% %plot(X_fourierAnt, -Y_fourierAnt, 'LineWidth', 2);
 
-% Obtain x,y coords for anterior
 fourier_bounds = [pi/2, 3*pi/2];
-fp = fplot(x_fourier, y_fourier, fourier_bounds, 'LineWidth', 2); Y_fourierAnt = fp.YData; X_fourierAnt = fp.XData;
-%plot(X_fourierAnt, -Y_fourierAnt, 'LineWidth', 2);
+
+% Replicate top of lens to remove suture so we can fit the fourier data
+data_top = M(M(:,2) > 0, :);
+data_bottom = [data_top(:,1), -1*data_top(:,2)];
+
+fourier_data = cat(1, data_top, data_bottom);
+
+
+[x_fourier, y_fourier] = fourier_fit(fourier_data(:,1), fourier_data(:,2));
+temp = x_fourier; x_fourier = y_fourier; y_fourier = -temp; % switching equations to properly orient anterior surface
+fp = fplot(x_fourier, y_fourier, fourier_bounds); X_fourierAnt = fp.XData; Y_fourierAnt = fp.YData;
 
 a_ant_fourier = max(X_fourierAnt);
-
-% fourier_bounds = [-pi/2, pi/2]
-% 
-% [x_fourier, y_fourier] = fourier_fit(M(:,2), M(:,1));
-% [X_fourier, Y_fourier] = fplot(x_fourier, y_fourier, fourier_bounds);
 % plot(X_fourier, Y_fourier)
 
 %% Chien - fit to raw
@@ -93,7 +101,7 @@ elip_bounds = [0 pi];
 fp = fplot(x_elipAnt, y_elipAnt, elip_bounds, 'LineWidth', 2); X_elipAnt = fp.XData; Y_elipAnt = fp.YData;
 %plot(X_elipAnt, Y_elipAnt, 'LineWidth', 2);
 
-legend("Raw", "Fourier", "Chien", "Forbes", "Ellipse")
+legend("Raw", "Fourier", "Chien", "Forbes", "Ellipse"); title("Raw Data & Models");
 
 %% Metrics
 zone = 3; % optical zone [-zone, +zone]
@@ -110,11 +118,12 @@ k_forbes = findCurvature(t, forbes_eq, -zone, zone);
 
 % Plot curvature
 figure; hold on;
-fplot(a_ant*sin(t), abs(1/k_chienAnt), chien_bounds);
-fplot(a_ant*sin(t-pi/2), abs(1/k_elipAnt), elip_bounds);
-fplot(a_ant_fourier*sin(t-pi), abs(1/k_fourierAnt), fourier_bounds);
-fplot(t, abs(1/k_forbes));
+fplot(a_ant*sin(t), abs(k_chienAnt), chien_bounds);
+fplot(a_ant*sin(t-pi/2), abs(k_elipAnt), elip_bounds);
+fplot(a_ant_fourier*sin(t-pi), abs(k_fourierAnt), fourier_bounds);
+fplot(t, abs(k_forbes));
 legend("Chien", "Ellipse", "Fourier", "Forbes"); title("Curvature")
+figure
 
 % Find smoothing energy (integral of derivative of curvature squared)
 smth_chienAnt = eval(vpaintegral(diff(k_chienAnt, t, 1) ^ 2, chien_bounds(1)+offset_chien, chien_bounds(2)-offset_chien));
@@ -129,41 +138,47 @@ smth_forbes = eval(vpaintegral(diff(k_forbes, t, 1) ^ 2, -zone, zone));
 [bendE_forbes, firstD_forbes, expr_forbes] = findBendingEnergy(t, forbes_eq, -zone, zone);
 
 % Mean/Variance of RoC - variance found numerically
-meanROC_chienAnt = abs(1/((chien_bounds(2)-offset_chien) - (chien_bounds(1)+offset_chien)) * eval(vpaintegral(1/k_chienAnt, chien_bounds(1)+offset_chien, chien_bounds(2)-offset_chien)));
-fp = fplot(1/k_chienAnt, [chien_bounds(1)+offset_chien, chien_bounds(2)-offset_chien], 'MeshDensity', 200);
+meanROC_chienAnt = abs(1/((chien_bounds(2)-offset_chien) - (chien_bounds(1)+offset_chien)) * eval(vpaintegral(k_chienAnt, chien_bounds(1)+offset_chien, chien_bounds(2)-offset_chien)));
+fp = fplot(k_chienAnt, [chien_bounds(1)+offset_chien, chien_bounds(2)-offset_chien], 'MeshDensity', 200);
 yROC_chienAnt = fp.YData;
 varROC_chienAnt = var(yROC_chienAnt);
-valROC_chienAnt = abs(eval(subs(1/k_chienAnt, t, chien_bounds(1)+offset_chien)));
+valROC_chienAnt = abs(eval(subs(k_chienAnt, t, chien_bounds(1)+offset_chien)));
 
 
-meanROC_elipAnt = abs(1/((elip_bounds(2)-offset_elip) - (elip_bounds(1)+offset_elip)) * eval(vpaintegral(1/k_elipAnt, elip_bounds(1)+offset_elip, elip_bounds(2)-offset_elip)));
-fp = fplot(1/k_elipAnt, [elip_bounds(1)+offset_elip, elip_bounds(2)-offset_elip], 'MeshDensity', 200);
+meanROC_elipAnt = abs(1/((elip_bounds(2)-offset_elip) - (elip_bounds(1)+offset_elip)) * eval(vpaintegral(k_elipAnt, elip_bounds(1)+offset_elip, elip_bounds(2)-offset_elip)));
+fp = fplot(k_elipAnt, [elip_bounds(1)+offset_elip, elip_bounds(2)-offset_elip], 'MeshDensity', 200);
 yROC_elipAnt = fp.YData;
 varROC_elipAnt = var(yROC_elipAnt);
-valROC_elipAnt = abs(eval(subs(1/k_elipAnt, t, elip_bounds(1)+offset_elip)));
+valROC_elipAnt = abs(eval(subs(k_elipAnt, t, elip_bounds(1)+offset_elip)));
 
-meanROC_fourierAnt = abs(1/((fourier_bounds(2)-offset_fourier) - (fourier_bounds(1)+offset_fourier)) * eval(vpaintegral(1/k_fourierAnt, fourier_bounds(1)+offset_fourier, fourier_bounds(2)-offset_fourier)));
-fp = fplot(1/k_fourierAnt, [fourier_bounds(1)+offset_fourier, fourier_bounds(2)-offset_fourier], 'MeshDensity', 200);
+% Try numerical integration
+
+int_k = eval(vpaintegral(k_fourierAnt, fourier_bounds(1)+offset_fourier, fourier_bounds(2)-offset_fourier, 'MaxFunctionCalls', 10^10));
+
+meanROC_fourierAnt = abs(1/((fourier_bounds(2)-offset_fourier) - (fourier_bounds(1)+offset_fourier)) * int_k);
+fp = fplot(abs(k_fourierAnt), [fourier_bounds(1)+offset_fourier, fourier_bounds(2)-offset_fourier], 'MeshDensity', 200);
 yROC_fourierAnt = fp.YData;
 varROC_fourierAnt = var(yROC_fourierAnt);
-valROC_fourierAnt = abs(eval(subs(1/k_fourierAnt, t, fourier_bounds(1)+offset_fourier)));
+valROC_fourierAnt = abs(eval(subs(k_fourierAnt, t, fourier_bounds(1)+offset_fourier)));
 
-% meanROC_forbesAnt = abs(1/(2*zone) * eval(vpaintegral(1/k_forbes, -zone, zone)));
-%[unused, yROC_forbesAnt] = fplot(1/k_forbes, [-zone, zone], 'MeshDensity', 200);
-%varROC_forbesAnt = var(yROC_forbesAnt);
-valROC_forbesAnt = abs(eval(subs(1/k_forbes, t, -zone)));
+meanROC_forbesAnt = abs(1/(2*zone) * eval(vpaintegral(k_forbes, -zone, zone, 'MaxFunctionCalls', 10^10)));
+fp = fplot(k_forbes, [-zone, zone], 'MeshDensity', 200);
+yROC_forbesAnt = fp.YData;
+varROC_forbesAnt = var(yROC_forbesAnt);
+valROC_forbesAnt = abs(eval(subs(k_forbes, t, -zone)));
 
-% Fit
+% Fit (in microns)
 
 data = [X_data, Y_data];
 data_fit = data(-3 < data(:,1), :);
 data_fit = data_fit(data_fit(:,1) < 3, :);
 X_fit = data_fit(:, 1); Y_fit = data_fit(:, 2);
-figure; scatter(X_fit, Y_fit)
+figure; hold on; scatter(X_fit, Y_fit); title("Data to fit");
 
-fit_forbes = getFit(X_fit, Y_fit, forbes_eq) * 10^6;
-fit_elip = getFit(acos(X_fit ./ a_ant), Y_fit, y_elipAnt) * 10^6;
-fit_chien = getFit(asin(X_fit ./ a_ant), Y_fit, y_chienAnt) * 10^6;
-fit_fourier = getFit(asin(X_fit ./ a_ant_fourier), Y_fit, y_fourier) * 10^6;
+fit_forbes = getFit(X_fit, Y_fit, forbes_eq);
+fit_elip = getFit(acos(X_fit ./ a_ant), Y_fit, y_elipAnt);
+fit_chien = getFit(asin(X_fit ./ a_ant), Y_fit, y_chienAnt);
+fit_fourier = getFit(asin(X_fit ./ a_ant_fourier), Y_fit, y_fourier);
+
 
 
