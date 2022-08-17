@@ -1,6 +1,6 @@
 clear; close all; clc;
 %% Input data
-data_file = "Human_30 yo RIEB13-0161_OD_data.xls";
+data_file = "Human_20 yo RIEB15-1632_OD_data.xls";
 age = 20;
 
 %% Read & Process Data
@@ -90,7 +90,7 @@ Y_forbes = -1*Y_data + max(Y_data); %figure; scatter(X_data, Y_forbes);
 
 % fit forbes to data
 syms rho;
-[forbes_eq, Y_forbes_raw, A] = forbes(X_data', Y_forbes', 2);
+[forbes_eq, Y_forbes_raw, A] = forbes(X_data', Y_forbes', 6);
 forbes_reformat = -1*forbes_eq + eval(subs(forbes_eq, rho, a));
 forbes_eq = forbes_reformat;
 
@@ -112,7 +112,7 @@ fp = fplot(x_elip, y_elip, elip_bounds); X_elip = fp.XData; Y_elip = fp.YData;
 legend("Raw", "Fourier", "Chien", "Forbes", "Ellipse")
 
 %% Metrics
-zone = 0.5; % optical zone [-zone, +zone]
+zone = 3; % optical zone [-zone, +zone]
 offset_chien = abs(chien_bounds(1)) - asin(zone/a); % polar - difference to come in from edges
 offset_elip = -1* (abs(elip_bounds(1)) - acos(zone/a));
 offset_fourier = abs(fourier_bounds(1)) - asin(zone/a_post_fourier)
@@ -149,26 +149,26 @@ meanROC_chien = abs(1/((chien_bounds(2)-offset_chien) - (chien_bounds(1)+offset_
 fp = fplot(abs(k_chien), [chien_bounds(1)+offset_chien, chien_bounds(2)-offset_chien], 'MeshDensity', 200);
 yROC_chien = fp.YData;
 varROC_chien = var(yROC_chien);
-valROC_chien = abs(eval(subs(k_chien, t, chien_bounds(1)+offset_chien)))
+valROC_chien = abs(eval(subs(1/k_chien, t, chien_bounds(1)+offset_chien)))
 
 
 meanROC_elip = abs(1/((elip_bounds(2)-offset_elip) - (elip_bounds(1)+offset_elip)) * eval(vpaintegral(k_elip, elip_bounds(1)+offset_elip, elip_bounds(2)-offset_elip)));
 fp = fplot(abs(k_elip), [elip_bounds(1)+offset_elip, elip_bounds(2)-offset_elip], 'MeshDensity', 200);
 yROC_elip = fp.YData;
 varROC_elip = var(yROC_elip);
-valROC_elip = abs(eval(subs(k_elip, t, elip_bounds(1)+offset_elip)))
+valROC_elip = abs(eval(subs(1/k_elip, t, elip_bounds(1)+offset_elip)))
 
 meanROC_fourier = abs(1/((fourier_bounds(2)-offset_fourier) - (fourier_bounds(1)+offset_fourier)) * eval(vpaintegral(k_fourier, fourier_bounds(1)+offset_fourier, fourier_bounds(2)-offset_fourier)));
 fp = fplot(abs(k_fourier), [fourier_bounds(1)+offset_fourier, fourier_bounds(2)-offset_fourier], 'MeshDensity', 200);
 yROC_fourier = fp.YData;
 varROC_fourier = var(yROC_fourier);
-valROC_fourier = abs(eval(subs(k_fourier, t, fourier_bounds(1)+offset_fourier)))
-% 
-% meanROC_forbes = abs(1/(2*zone) * eval(vpaintegral(k_forbes, -zone, zone)));
-% fp = fplot(abs(k_forbes), [-zone, zone], 'MeshDensity', 200);
-% yROC_forbes = fp.YData;
-% varROC_forbes = var(yROC_forbes);
-% valROC_forbes = abs(eval(subs(k_forbes, t, -zone)))
+valROC_fourier = abs(eval(subs(1/k_fourier, t, fourier_bounds(1)+offset_fourier)))
+
+meanROC_forbes = abs(1/(2*zone) * eval(vpaintegral(k_forbes, -zone, zone)));
+fp = fplot(abs(k_forbes), [-zone, zone], 'MeshDensity', 200);
+yROC_forbes = fp.YData;
+varROC_forbes = var(yROC_forbes);
+valROC_forbes = abs(eval(subs(1/k_forbes, t, -zone)))
 
 % Fit
 

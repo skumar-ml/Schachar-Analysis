@@ -13,20 +13,22 @@ r = 1/c; % radius of curvature
 % Y
 Y = Y_Ant'; % (d x 1)
 
-% S
+% S (directly solving equation 2.1 (or 4.3) from Forbes Robust for A)
+% rho = sqrt(X_Ant.^2 + Y_Ant.^2);
 rho = X_Ant;
 u = rho ./ max(rho);
 
 lambda = (c * rho.^2) ./ (1+sqrt(1-c^2 .* rho.^2));
 beta = (u.^2 .* (1 - u.^2)) ./ (sqrt(1-c^2.*rho.^2));
 
-mini_S = (u.^2 .* ones(M+1, size(u,2))) .^ repmat((0:M)', 1, size(u,2));
+mini_S = (u.^2 .* ones(M+1, size(u,2))) .^ repmat((0:M)', 1, size(u,2)); % use ones to broadcast to size. Repmat is the power applied to u^2
 mini_S = mini_S .* beta;
 
 S = [lambda ; mini_S];
 
 % A
-A = inv(S * S') * S * Y;
+% A = inv(S * S') * S * Y; 
+A = ((S*S')\S) * Y;
 
 %% Assembling curve 
 

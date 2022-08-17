@@ -1,6 +1,6 @@
 clear; close all; clc;
 %% Input data
-data_file = "Human_30 yo RIEB13-0161_OD_data.xls";
+data_file = "Human_20 yo RIEB15-1632_OD_data.xls";
 age = 20;
 
 %% Read & Process Data
@@ -81,6 +81,7 @@ Y_forbes = -1*Y_data + max(Y_data); %figure; scatter(X_data, Y_forbes);
 % fit forbes to data
 syms rho;
 [forbes_eq, Y_forbes_raw, A] = forbes(X_data', Y_forbes', 6);
+A
 
 forbes_reformat = -1*forbes_eq + eval(subs(forbes_eq, rho, a_ant));
 forbes_eq = forbes_reformat;
@@ -113,7 +114,7 @@ offset_fourier = abs(fourier_bounds(1)) - asin(zone/a_ant_fourier);
 k_chienAnt = findCurvature(x_chienAnt, y_chienAnt, chien_bounds(1)+offset_chien, chien_bounds(2)-offset_chien);
 k_elipAnt = findCurvature(x_elipAnt, y_elipAnt, elip_bounds(1)+offset_elip, elip_bounds(2)-offset_elip);
 k_fourierAnt = findCurvature(x_fourier, y_fourier, fourier_bounds(1)+offset_fourier, fourier_bounds(2)-offset_fourier);
-k_forbes = findCurvature(t, forbes_eq, -zone, zone);
+k_forbes = findCurvature(t, forbes_eq, -zone, zone)
 
 % Plot curvature
 figure; hold on;
@@ -128,43 +129,43 @@ figure
 smth_chienAnt = eval(vpaintegral(diff(k_chienAnt, t, 1) ^ 2, chien_bounds(1)+offset_chien, chien_bounds(2)-offset_chien));
 smth_elipAnt = eval(vpaintegral(diff(k_elipAnt, t, 1) ^ 2, elip_bounds(1)+offset_elip, elip_bounds(2)-offset_elip));
 smth_fourierAnt = eval(vpaintegral(diff(k_fourierAnt, t, 1) ^ 2, fourier_bounds(1)+offset_fourier, fourier_bounds(2)-offset_fourier));
-smth_forbes = eval(vpaintegral(diff(k_forbes, t, 1) ^ 2, -zone, zone));
+smth_forbes = eval(vpaintegral(diff(k_forbes, t, 1) ^ 2, -zone, zone))
 
 % Find bending energy
 [bendE_chienAnt, firstD_chienAnt, expr_chienAnt] = findBendingEnergy(x_chienAnt, y_chienAnt, chien_bounds(1)+offset_chien, chien_bounds(2)-offset_chien);
 [bendE_elipAnt, firstD_elipAnt, expr_elipAnt] = findBendingEnergy(x_elipAnt, y_elipAnt, elip_bounds(1)+offset_elip, elip_bounds(2)-offset_elip);
 [bendE_fourierAnt, firstD_fourierAnt, expr_fourierAnt] = findBendingEnergy(x_fourier, y_fourier, fourier_bounds(1)+offset_fourier, fourier_bounds(2)-offset_fourier);
-[bendE_forbes, firstD_forbes, expr_forbes] = findBendingEnergy(t, forbes_eq, -zone, zone);
+[bendE_forbes, firstD_forbes, expr_forbes] = findBendingEnergy(t, forbes_eq, -zone, zone)
 
 % Mean/Variance of RoC - variance found numerically
 meanROC_chienAnt = abs(1/((chien_bounds(2)-offset_chien) - (chien_bounds(1)+offset_chien)) * eval(vpaintegral(k_chienAnt, chien_bounds(1)+offset_chien, chien_bounds(2)-offset_chien)));
 fp = fplot(k_chienAnt, [chien_bounds(1)+offset_chien, chien_bounds(2)-offset_chien], 'MeshDensity', 200);
 yROC_chienAnt = fp.YData;
 varROC_chienAnt = var(yROC_chienAnt);
-valROC_chienAnt = abs(eval(subs(k_chienAnt, t, chien_bounds(1)+offset_chien)));
+valROC_chienAnt = abs(eval(subs(1/k_chienAnt, t, chien_bounds(1)+offset_chien)))
 
 
 meanROC_elipAnt = abs(1/((elip_bounds(2)-offset_elip) - (elip_bounds(1)+offset_elip)) * eval(vpaintegral(k_elipAnt, elip_bounds(1)+offset_elip, elip_bounds(2)-offset_elip)));
 fp = fplot(k_elipAnt, [elip_bounds(1)+offset_elip, elip_bounds(2)-offset_elip], 'MeshDensity', 200);
 yROC_elipAnt = fp.YData;
 varROC_elipAnt = var(yROC_elipAnt);
-valROC_elipAnt = abs(eval(subs(k_elipAnt, t, elip_bounds(1)+offset_elip)));
+valROC_elipAnt = abs(eval(subs(1/k_elipAnt, t, elip_bounds(1)+offset_elip)))
 
 % Try numerical integration
 
 int_k = eval(vpaintegral(k_fourierAnt, fourier_bounds(1)+offset_fourier, fourier_bounds(2)-offset_fourier, 'MaxFunctionCalls', 10^10));
 
 meanROC_fourierAnt = abs(1/((fourier_bounds(2)-offset_fourier) - (fourier_bounds(1)+offset_fourier)) * int_k);
-fp = fplot(abs(k_fourierAnt), [fourier_bounds(1)+offset_fourier, fourier_bounds(2)-offset_fourier], 'MeshDensity', 200);
+fp = fplot(k_fourierAnt, [fourier_bounds(1)+offset_fourier, fourier_bounds(2)-offset_fourier], 'MeshDensity', 200);
 yROC_fourierAnt = fp.YData;
 varROC_fourierAnt = var(yROC_fourierAnt);
-valROC_fourierAnt = abs(eval(subs(k_fourierAnt, t, fourier_bounds(1)+offset_fourier)));
+valROC_fourierAnt = abs(eval(subs(1/k_fourierAnt, t, fourier_bounds(1)+offset_fourier)))
 
 meanROC_forbesAnt = abs(1/(2*zone) * eval(vpaintegral(k_forbes, -zone, zone, 'MaxFunctionCalls', 10^10)));
 fp = fplot(k_forbes, [-zone, zone], 'MeshDensity', 200);
 yROC_forbesAnt = fp.YData;
 varROC_forbesAnt = var(yROC_forbesAnt);
-valROC_forbesAnt = abs(eval(subs(k_forbes, t, -zone)));
+valROC_forbesAnt = abs(eval(subs(1/k_forbes, t, -zone)))
 
 % Fit (in microns)
 
