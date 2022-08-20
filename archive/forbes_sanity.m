@@ -9,9 +9,9 @@ figure(1); fplot(y, [-20, 20])
 %% My Urs Implementation
 
 % Find forbes equation
-[forbes_eq, Y_forbes, A] = forbes(X_data, Y_data, 8);
+[forbes_eq, Y_forbes, A_mine] = forbes(X_data, Y_data, 6);
+A_mine = A_mine';
 plot(X_data, Y_forbes); 
-A
 
 % Fit Error
 diff = Y_forbes - Y_data;
@@ -23,15 +23,15 @@ fit_myUrs = mean((Y_forbes - Y_data)).^2;
 
 %% Paper Urs Implementation
 % Coefficients
-A = [2019004, 7143, -13944, 4190, -1095, 283, -68] * 10^-9; % from Robust paper
+A_urs = [2019004, 7143, -13944, 4190, -1095, 283, -68] * 10^-9; % from Robust paper
 
 % Set up equation
 syms rho;
 u = rho / max(X_data);
 c = (2*max(Y_data) / (max(X_data)^2 + max(Y_data)^2)); 
-M = size(A,2)-1;
+M = size(A_urs,2)-1;
 
-z = (c*rho^2) / (1+sqrt(1-c^2*rho^2)) + (u^2 * (1-u^2)) / (sqrt(1-c^2*rho^2)) .* (A * (u.^2 .^ ((0:M)')));
+z = (c*rho^2) / (1+sqrt(1-c^2*rho^2)) + (u^2 * (1-u^2)) / (sqrt(1-c^2*rho^2)) .* (A_urs * (u.^2 .^ ((0:M)')));
 
 % Evaluate at x data points
 FUN = matlabFunction(z);

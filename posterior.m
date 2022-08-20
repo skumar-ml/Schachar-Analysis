@@ -90,8 +90,8 @@ Y_forbes = -1*Y_data + max(Y_data); %figure; scatter(X_data, Y_forbes);
 
 % fit forbes to data
 syms rho;
-[forbes_eq, Y_forbes_raw, A] = forbes(X_data', Y_forbes', 6);
-forbes_reformat = -1*forbes_eq + eval(subs(forbes_eq, rho, a));
+[forbes_eq, Y_forbes_raw, A] = forbes(X_data', Y_forbes', 8);
+forbes_reformat = -1*forbes_eq + vpa(subs(forbes_eq, rho, a));
 forbes_eq = forbes_reformat;
 
 fp = fplot(rho, forbes_eq, [min(X_data), max(X_data)]); X_forbes = fp.XData; Y_forbes = fp.YData;
